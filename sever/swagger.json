@@ -1,0 +1,99 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PDF Chat API",
+    "description": "API for processing PDFs and generating AI responses",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/api/v1/chat/ask-question": {
+      "post": {
+        "summary": "Upload PDF and ask a question",
+        "description": "Upload a PDF file and ask a question about its contents",
+        "tags": ["PDF Chat"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pdf": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF file to analyze (max 10MB)"
+                  },
+                  "question": {
+                    "type": "string",
+                    "description": "Question about the PDF content"
+                  }
+                },
+                "required": ["pdf", "question"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "PDF processed successfully"
+                    },
+                    "response": {
+                      "type": "string",
+                      "description": "AI-generated response to the question"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Please provide a PDF file"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Error processing PDF"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

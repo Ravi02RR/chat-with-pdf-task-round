@@ -61,7 +61,7 @@ const App = () => {
     formData.append('question', question);
 
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/chat/ask-question',
+      const response = await axios.post('https://api-chatwithpdf.vercel.app/api/v1/chat/ask-question',
         formData,
         {
           headers: {

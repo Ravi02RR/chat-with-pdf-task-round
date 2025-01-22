@@ -32,7 +32,7 @@ This project is a full-stack application with separate frontend and backend impl
    ```
 4. Access the Swagger API documentation at:
    ```
-   http://localhost:3000/api-docs
+   https://taskapi.devguy.live/api-docs
    ```
 
 #### Frontend Setup
@@ -50,7 +50,7 @@ This project is a full-stack application with separate frontend and backend impl
    ```
 4. Access the frontend application at:
    ```
-   http://localhost:5173
+   https://task.devguy.live
    ```
 
 ---
@@ -58,7 +58,7 @@ This project is a full-stack application with separate frontend and backend impl
 ## API Documentation
 The Swagger UI is available at the following endpoint:
 ```
-http://localhost:3000/api-docs
+https://taskapi.devguy.live/api-docs
 ```
 This provides comprehensive documentation for all the backend APIs, including their endpoints, request methods, required parameters, and response structures.
 
@@ -72,5 +72,4 @@ To provide a better understanding of the project, include the following screensh
 ![Frontend homepage](assets/3.png)
 
 ---
-
 

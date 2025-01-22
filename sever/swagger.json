@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "PDF Chat API",
-    "description": "API for processing PDFs and generating AI responses",
+    "title": "PDF Form Fill API",
+    "description": "API for automatically filling form fields from PDF documents",
     "version": "1.0.0"
   },
   "servers": [
@@ -12,11 +12,11 @@
     }
   ],
   "paths": {
-    "/api/v1/chat/ask-question": {
+    "/api/v1/chat/fill-form": {
       "post": {
-        "summary": "Upload PDF and ask a question",
-        "description": "Upload a PDF file and ask a question about its contents",
-        "tags": ["PDF Chat"],
+        "summary": "Extract and fill form data from PDF",
+        "description": "Upload a PDF file and extract specific fields to auto-fill a form",
+        "tags": ["Form Fill"],
         "requestBody": {
           "required": true,
           "content": {
@@ -29,19 +29,20 @@
                     "format": "binary",
                     "description": "PDF file to analyze (max 10MB)"
                   },
-                  "question": {
+                  "fields": {
                     "type": "string",
-                    "description": "Question about the PDF content"
+                    "description": "JSON string of fields to extract",
+                    "example": "{\"name\":true,\"phoneNumber\":true,\"address\":true}"
                   }
                 },
-                "required": ["pdf", "question"]
+                "required": ["pdf", "fields"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Successful response",
+            "description": "Form data successfully extracted",
             "content": {
               "application/json": {
                 "schema": {
@@ -49,11 +50,24 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "PDF processed successfully"
+                      "example": "Form filled successfully"
                     },
-                    "response": {
-                      "type": "string",
-                      "description": "AI-generated response to the question"
+                    "formData": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Extracted name"
+                        },
+                        "phoneNumber": {
+                          "type": "string",
+                          "description": "Extracted phone number"
+                        },
+                        "address": {
+                          "type": "string",
+                          "description": "Extracted address"
+                        }
+                      }
                     }
                   }
                 }
@@ -91,6 +105,36 @@
                 }
               }
             }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FormData": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Person's full name"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number"
+          },
+          "address": {
+            "type": "string",
+            "description": "Full address"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
           }
         }
       }

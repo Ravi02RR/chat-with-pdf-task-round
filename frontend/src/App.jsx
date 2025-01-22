@@ -1,209 +1,172 @@
-/* eslint-disable no-unused-vars */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { Upload, Send, Loader2, MessageSquare } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Upload, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const App = () => {
-  const [pdfFile, setPdfFile] = useState(null);
-  const [question, setQuestion] = useState('');
-  const [response, setResponse] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    phoneNumber: '',
+    address: ''
+  });
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [thinking, setThinking] = useState(false);
 
-  useEffect(() => {
-    const savedPdf = localStorage.getItem('savedPdf');
-    if (savedPdf) {
-      setPdfFile(JSON.parse(savedPdf));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (pdfFile) {
-      localStorage.setItem('savedPdf', JSON.stringify(pdfFile));
-    }
-  }, [pdfFile]);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      setPdfFile(file);
-      setError('');
-    } else {
-      setError('Please select a valid PDF file');
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const simulateThinking = async () => {
-    setThinking(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setThinking(false);
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.type === 'application/pdf') {
+      setFile(selectedFile);
+      setError('');
+    } else {
+      setError('Please upload a PDF file');
+      setFile(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!pdfFile || !question) {
-      setError('Please provide both a PDF file and a question');
+    if (!file) {
+      setError('Please upload a PDF file');
       return;
     }
 
     setLoading(true);
     setError('');
-    await simulateThinking();
 
-    const formData = new FormData();
-    formData.append('pdf', pdfFile);
-    formData.append('question', question);
+    const formDataToSend = new FormData();
+    formDataToSend.append('pdf', file);
+    formDataToSend.append('fields', JSON.stringify({
+      Name: true,
+      Phone: true,
+      Address: true,
+      Role: true
+    }));
 
     try {
-      const response = await axios.post('https://taskapi.devguy.live/api/v1/chat/ask-question',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+      const response = await axios.post('https://taskapi.devguy.live/api/v1/chat/fill-form', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
-      );
+      });
 
-
-      const formattedResponse = response.data.response;
-      setResponse(formattedResponse);
+      
+      if (response.data.formData) {
+        const mappedData = {
+          name: response.data.formData.Name || '',
+          phoneNumber: response.data.formData.Phone || '',
+          address: response.data.formData.Address || ''
+        };
+        setFormData(mappedData);
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Error processing request');
+      setError(err.response?.data?.error || 'Error processing PDF');
     } finally {
       setLoading(false);
     }
   };
 
-
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4"
+    >
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto"
+        className="w-full max-w-md bg-white rounded-lg shadow-lg p-6"
+        whileHover={{ scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 300 }}
       >
+       
 
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-
-          <div className="bg-gray-800 p-6 rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-500 transition-colors">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             <label className="flex flex-col items-center cursor-pointer">
+              <Upload className="w-8 h-8 text-gray-400 mb-2" />
+              <span className="text-sm text-gray-500">Upload PDF to auto-fill</span>
               <input
                 type="file"
                 onChange={handleFileChange}
-                className="hidden"
                 accept="application/pdf"
+                className="hidden"
               />
-              <Upload className="w-12 h-12 mb-2 text-gray-400" />
-              <span className="text-lg font-medium">
-                {pdfFile ? pdfFile.name : 'Drop your PDF here or click to upload'}
-              </span>
             </label>
+            {file && (
+              <p className="text-sm text-green-600 mt-2 text-center">
+                Selected: {file.name}
+              </p>
+            )}
           </div>
 
-          {/* Question Input */}
-          <div className="space-y-2">
-            <textarea
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask your question about the PDF..."
-              className="w-full p-4 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-colors"
-              rows="3"
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Address</label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
+          {error && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-red-500 text-sm text-center"
+            >
+              {error}
+            </motion.p>
+          )}
 
           <motion.button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 flex items-center justify-center space-x-2 disabled:opacity-50"
-            disabled={loading || !pdfFile || !question}
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <Send className="w-5 h-5" />
+              'Fill Form'
             )}
-            <span>Submit Question</span>
           </motion.button>
         </form>
-
-
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-4 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-200"
-            >
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-
-        <AnimatePresence>
-          {thinking && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="mt-8 flex items-center space-x-3"
-            >
-              <MessageSquare className="w-6 h-6 text-blue-400 animate-pulse" />
-              <span className="text-gray-400">Thinking...</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-
-        <AnimatePresence>
-          {response && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-8 p-6 bg-gray-800 rounded-lg border border-gray-700"
-            >
-              <div className="prose prose-invert max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    code({ node, inline, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '');
-                      return !inline && match ? (
-                        <SyntaxHighlighter
-                          style={coldarkDark}
-                          language={match[1]}
-                          PreTag="div"
-                          {...props}
-                        >
-                          {String(children).replace(/\n$/, '')}
-                        </SyntaxHighlighter>
-                      ) : (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                  }}
-                >
-                  {response}
-                </ReactMarkdown>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };
 

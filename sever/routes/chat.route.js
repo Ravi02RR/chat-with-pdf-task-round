@@ -3,7 +3,7 @@ const multer = require('multer');
 const { extractPdfData } = require('../utils/pdf-parse');
 const { generateAiResponse } = require('../utils/ai-response');
 const fs = require('fs');
-
+const {extractJSON} = require('extract-first-json');
 const router = Router();
 
 // Multer setup
@@ -39,51 +39,49 @@ const upload = multer({
 });
 
 
-router.post('/ask-question', upload.single('pdf'), async (req, res) => {
+
+router.post('/fill-form', upload.single('pdf'), async (req, res) => {
     try {
+       
         if (!req.file) {
-            return res.status(400).json({
-                error: 'Please provide a PDF file'
-            });
+            return res.status(400).json({ error: 'Please provide a PDF file' });
         }
 
-        if (!req.body.question) {
-            return res.status(400).json({
-                error: 'Please provide a question'
-            });
+        
+        if (!req.body.fields) {
+            return res.status(400).json({ error: 'Please provide form fields to fill' });
         }
 
+        
         const context = await extractPdfData(req.file.path);
-
-        if (!context) {
-            return res.status(400).json({
-                error: 'Error extracting data from PDF'
-            });
+        if (!context || !context.text) {
+            return res.status(400).json({ error: 'Error extracting data from PDF' });
         }
 
-        const response = await generateAiResponse(req.body.question, context.text);
+       
+        const fields = JSON.parse(req.body.fields);
+        const response = await generateAiResponse(fields, context.text);
 
-
+        
         fs.unlink(req.file.path, (err) => {
             if (err) console.error('Error deleting file:', err);
         });
 
+        console.log(extractJSON(response));
+        
         res.status(200).json({
-            message: 'PDF processed successfully',
-            response: response
+            message: 'Form filled successfully',
+            formData: extractJSON(response)
         });
-
     } catch (err) {
-        // Clean up 
+        
         if (req.file) {
             fs.unlink(req.file.path, (unlinkErr) => {
                 if (unlinkErr) console.error('Error deleting file:', unlinkErr);
             });
         }
 
-        res.status(500).json({
-            error: err.message || 'Error processing PDF'
-        });
+        res.status(500).json({ error: err.message || 'Error processing PDF' });
     }
 });
 

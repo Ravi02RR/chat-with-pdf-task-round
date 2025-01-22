@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { Upload, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const App = () => {
   const [formData, setFormData] = useState({
@@ -52,14 +51,13 @@ const App = () => {
     }));
 
     try {
-      const response = await axios.post('https://taskapi.devguy.live/api/v1/chat/fill-form', formDataToSend, {
+      const response = await axios.post('http://localhost:3000/api/v1/chat/fill-form', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      
-      if (response.data.formData) {
+      if (response.data?.formData) {
         const mappedData = {
           name: response.data.formData.Name || '',
           phoneNumber: response.data.formData.Phone || '',
@@ -75,18 +73,8 @@ const App = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4"
-    >
-      <motion.div
-        className="w-full max-w-md bg-white rounded-lg shadow-lg p-6"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
-       
-
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             <label className="flex flex-col items-center cursor-pointer">
@@ -142,31 +130,25 @@ const App = () => {
           </div>
 
           {error && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-red-500 text-sm text-center"
-            >
+            <p className="text-red-500 text-sm text-center">
               {error}
-            </motion.p>
+            </p>
           )}
 
-          <motion.button
+          <button
             type="submit"
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               'Fill Form'
             )}
-          </motion.button>
+          </button>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

@@ -1,33 +1,71 @@
 const Groq = require("groq-sdk");
 
-console.log(process.env.GROQ_API_KEY);
-
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function getGroqChatCompletion(fields, context) {
     try {
+      
+        const requestedFields = Object.entries(fields)
+            .filter(([_, value]) => value === true)
+            .map(([key]) => key)
+            .join(', ');
+
+        const prompt = `
+        You are an AI assistant helping to extract specific data fields from a document.
+        
+        Context from the document: "${context}"
+        
+        Return ONLY a simple JSON object containing these fields: ${requestedFields}
+        
+        Rules:
+        1. Return ONLY the exact fields requested, nothing else
+        2. Return as a plain JSON object, no markdown, no explanations
+        3. Use exactly the same field names as requested
+        4. If a field isn't found, leave it empty/null
+        
+        Example format:
+        {
+          "Name": "John Doe",
+          "Phone": "+1234567890"
+        }`;
+
         const response = await groq.chat.completions.create({
             messages: [
                 {
                     role: "system",
-                    content: `You are an AI assistant helping to extract and format data for auto form filling. The following context is parsed data from a document: "${context}". Based on this information, extract relevant details for the fields: "${fields}". Ensure the response is a valid JSON object where keys match the field names and values are populated with the extracted data.`,
+                    content: prompt
                 },
                 {
                     role: "user",
-                    content: `Extract data for the following fields: ${fields}`,
-                },
+                    content: `Extract only these fields: ${requestedFields}`
+                }
             ],
             model: "llama-3.3-70b-versatile",
+            temperature: 0.1, 
         });
-        return response.choices[0]?.message?.content || "";
+
+        const content = response.choices[0]?.message?.content || "";
+        
+      
+        try {
+            
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            return JSON.parse(content);
+        } catch (parseError) {
+            console.error("Error parsing JSON response:", parseError);
+            return {};
+        }
     } catch (error) {
         console.error("Error fetching Groq completion:", error);
-        return "An error occurred while generating the response.";
+        return {};
     }
 }
 
-async function generateAiResponse(question, context) {
-    const response = await getGroqChatCompletion(question, context);
+async function generateAiResponse(fields, context) {
+    const response = await getGroqChatCompletion(fields, context);
     return response;
 }
 

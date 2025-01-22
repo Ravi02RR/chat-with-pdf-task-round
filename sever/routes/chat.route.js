@@ -3,7 +3,6 @@ const multer = require('multer');
 const { extractPdfData } = require('../utils/pdf-parse');
 const { generateAiResponse } = require('../utils/ai-response');
 const fs = require('fs');
-const {extractJSON} = require('extract-first-json');
 const router = Router();
 
 // Multer setup
@@ -53,6 +52,7 @@ router.post('/fill-form', upload.single('pdf'), async (req, res) => {
         }
 
         
+        console.log('req.file', req.body.fields);
         const context = await extractPdfData(req.file.path);
         if (!context || !context.text) {
             return res.status(400).json({ error: 'Error extracting data from PDF' });
@@ -67,11 +67,10 @@ router.post('/fill-form', upload.single('pdf'), async (req, res) => {
             if (err) console.error('Error deleting file:', err);
         });
 
-        console.log(extractJSON(response));
-        
+        // console.log('response', response);
         res.status(200).json({
             message: 'Form filled successfully',
-            formData: extractJSON(response)
+            formData: response
         });
     } catch (err) {
         
